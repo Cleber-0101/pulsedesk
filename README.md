@@ -47,6 +47,7 @@ npm run dev
 | Carlos Mendes | carlos@empresa.com | senha123 |
 | Beatriz Costa | beatriz@empresa.com | senha123 |
 | Diego Rocha | diego@empresa.com | senha123 |
+| Diego Rocha | diego@empresa.com | senha123 |
 
 ---
 

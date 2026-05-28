@@ -138,7 +138,8 @@ async function initDatabase() {
       { nome: 'Ana Silva', email: 'ana@empresa.com', setor: 'Suporte', cargo: 'Atendente Senior' },
       { nome: 'Carlos Mendes', email: 'carlos@empresa.com', setor: 'Vendas', cargo: 'Consultor' },
       { nome: 'Beatriz Costa', email: 'beatriz@empresa.com', setor: 'Suporte', cargo: 'Atendente' },
-      { nome: 'Diego Rocha', email: 'diego@empresa.com', setor: 'Financeiro', cargo: 'Analista' }
+      { nome: 'Diego Rocha', email: 'diego@empresa.com', setor: 'Financeiro', cargo: 'Analista' },
+      { nome: 'Cleber', email: 'cleber@oaz.co', setor: 'tecnologia', cargo: 'Engenheiro de software' },
     ];
 
     const hash = bcrypt.hashSync('senha123', 10);

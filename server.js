@@ -37,6 +37,15 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Porta ${PORT} já está em uso. Pare o servidor existente ou defina outra porta usando PORT=<número>`);
+    process.exit(1);
+  }
+  console.error('Erro do servidor:', err);
+  process.exit(1);
+});
+
 // Inicializar apenas em ambiente local (não Vercel)
 if (process.env.NODE_ENV !== 'production') {
   ready

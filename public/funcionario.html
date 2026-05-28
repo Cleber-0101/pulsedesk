@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PulseDesk — Meu Painel</title>
+<title>avaliações recebidas</title>
 <link rel="stylesheet" href="css/funcionario.css">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -124,7 +124,7 @@
 const token = localStorage.getItem('pd_token');
 const nome = localStorage.getItem('pd_nome');
 if (!token || localStorage.getItem('pd_tipo') !== 'funcionario') {
-  location.href = 'login.html';
+  location.href = 'index.html';
 }
 
 document.getElementById('nav-nome').textContent = nome;
@@ -270,7 +270,7 @@ async function carregarRanking() {
   }).join('') || '<div class="empty">Sem dados de ranking ainda</div>';
 }
 
-function sair() { localStorage.clear(); location.href = 'login.html'; }
+function sair() { localStorage.clear(); location.href = 'index.html'; }
 
 carregarPainel();
 </script>
