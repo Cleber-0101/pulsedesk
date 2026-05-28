@@ -24,9 +24,9 @@ app.use('/api/pesquisa', require('./routes/pesquisa'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/funcionario', require('./routes/funcionario'));
 
-// Rota raiz → login
+// Rota raiz → index
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Socket.io — painel admin em tempo real
