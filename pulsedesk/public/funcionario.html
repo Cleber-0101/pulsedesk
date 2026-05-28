@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PulseDesk — Meu Painel</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0f; --surface: #111118; --surface2: #16161f;
+    --border: #1e1e2e; --accent: #6c63ff; --accent2: #ff6584;
+    --success: #00d4aa; --warn: #f5a623;
+    --text: #e8e8f0; --muted: #666680;
+  }
+
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* TOP NAV */
+  .topnav {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 32px; height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .nav-logo { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; }
+  .nav-logo span { color: var(--accent); }
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab {
+    padding: 8px 16px; border-radius: 8px;
+    border: none; background: transparent;
+    color: var(--muted); font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: all 0.18s;
+  }
+  .nav-tab:hover { background: var(--surface2); color: var(--text); }
+  .nav-tab.active { background: rgba(108,99,255,0.15); color: var(--accent); }
+  .nav-user {
+    display: flex; align-items: center; gap: 10px; font-size: 14px;
+  }
+  .nav-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 14px; color: #fff; font-family: 'Syne', sans-serif;
+  }
+  .btn-sair {
+    padding: 6px 14px; border: 1px solid var(--border);
+    border-radius: 8px; background: none; color: var(--muted);
+    font-size: 13px; cursor: pointer; transition: all 0.18s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .btn-sair:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  .btn {
+    padding: 14px 18px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #111;
+    border: none;
+    box-shadow: 0 10px 24px rgba(216,194,157,0.18);
+  }
+
+  .btn:hover { transform: translateY(-1px); }
+
+  /* CONTENT */
+  .content { max-width: 1100px; margin: 0 auto; padding: 32px; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* WELCOME HERO */
+  .hero {
+    background: linear-gradient(135deg, rgba(216,194,157,0.18), rgba(184,164,122,0.1));
+    border: 1px solid rgba(216,194,157,0.18);
+    border-radius: 22px; padding: 28px 32px;
+    margin-bottom: 24px;
+    display: flex; align-items: center; gap: 24px;
+  }
+  .hero-avatar {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: 800; color: #fff;
+    font-family: 'Syne', sans-serif; flex-shrink: 0;
+  }
+  .hero-info { flex: 1; }
+  .hero-nome { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; }
+  .hero-cargo { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  .hero-frase {
+    font-size: 14px; color: var(--success); margin-top: 10px;
+    font-style: italic;
+  }
+  .hero-pos {
+    text-align: center; padding: 0 24px;
+  }
+  .hero-pos-num {
+    font-family: 'Syne', sans-serif; font-size: 42px; font-weight: 800;
+    background: linear-gradient(135deg, var(--warn), #f97316);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero-pos-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px; text-align: center;
+  }
+  .stat-val {
+    font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800;
+    margin-bottom: 4px;
+  }
+  .stat-label { font-size: 12px; color: var(--muted); }
+  .stat-icon { font-size: 20px; margin-bottom: 8px; }
+
+  /* PANEL */
+  .panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 22px; margin-bottom: 16px;
+  }
+  .panel-title {
+    font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
+    margin-bottom: 18px;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* CATEGORIAS */
+  .cat-bars { display: flex; flex-direction: column; gap: 14px; }
+  .cat-row { display: flex; align-items: center; gap: 12px; }
+  .cat-label { min-width: 130px; font-size: 13px; }
+  .cat-bar-bg { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .cat-bar { height: 100%; border-radius: 4px; transition: width 1s ease; }
+  .cat-val { min-width: 32px; text-align: right; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; }
+
+  /* AVALIAÇÕES */
+  .avaliacao-item {
+    padding: 14px;
+    border-bottom: 1px solid var(--border);
+    border-radius: 10px; margin-bottom: 8px;
+    background: var(--surface2);
+  }
+  .avaliacao-item:last-child { margin-bottom: 0; }
+  .aval-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .aval-nota {
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px;
+  }
+  .aval-data { font-size: 11px; color: var(--muted); }
+  .aval-badges { display: flex; gap: 6px; margin-bottom: 8px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+  }
+  .badge-pos { background: rgba(0,212,170,0.12); color: var(--success); }
+  .badge-neu { background: rgba(108,99,255,0.12); color: var(--accent); }
+  .badge-neg { background: rgba(255,101,132,0.12); color: var(--accent2); }
+  .aval-comentario { font-size: 13px; color: var(--muted); font-style: italic; }
+  .aval-resumo-ia {
+    font-size: 12px; padding: 8px 12px; margin-top: 8px;
+    background: rgba(108,99,255,0.06); border-left: 3px solid var(--accent);
+    border-radius: 4px; color: var(--text);
+  }
+  .aval-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .aval-tag {
+    font-size: 10px; padding: 2px 8px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--muted);
+  }
+
+  /* TAGS */
+  .tags-cloud { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag-item {
+    padding: 6px 14px; border-radius: 20px;
+    font-size: 13px; font-weight: 500;
+    background: var(--surface2); border: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .tag-count { color: var(--accent); font-weight: 700; }
+
+  /* RANKING */
+  .ranking-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 0; border-bottom: 1px solid var(--border);
+  }
+  .ranking-item:last-child { border-bottom: none; }
+  .rank-pos {
+    width: 26px; height: 26px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 800;
+    flex-shrink: 0;
+  }
+  .rank-1 { background: rgba(255,215,0,0.15); color: #ffd700; }
+  .rank-2 { background: rgba(192,192,192,0.15); color: #c0c0c0; }
+  .rank-3 { background: rgba(205,127,50,0.15); color: #cd7f32; }
+  .rank-n { background: var(--surface2); color: var(--muted); }
+  .rank-eu { border: 1px solid var(--accent); }
+  .rank-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, #666, #444);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; color: #fff; flex-shrink: 0;
+  }
+  .rank-avatar.eu { background: linear-gradient(135deg, var(--accent), #8b5cf6); }
+  .rank-nome-eu { color: var(--accent); font-weight: 700; }
+
+  /* TENDENCIA */
+  .tend-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;
+    margin-top: 8px;
+  }
+  .tend-up { background: rgba(0,212,170,0.12); color: var(--success); }
+  .tend-down { background: rgba(255,101,132,0.12); color: var(--accent2); }
+  .tend-eq { background: rgba(108,99,255,0.12); color: var(--accent); }
+
+  .empty { text-align: center; color: var(--muted); padding: 28px; font-size: 14px; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); }
+</style>
+</head>
+<body>
+
+<!-- TOPNAV -->
+<nav class="topnav">
+  <div class="nav-logo">Pulse<span>Desk</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="navTo('painel', this)">📊 Meu Painel</button>
+    <button class="nav-tab" onclick="navTo('historico', this)">📋 Histórico</button>
+    <button class="nav-tab" onclick="navTo('ranking', this)">🏆 Ranking</button>
+  </div>
+  <div class="nav-user">
+    <div class="nav-avatar" id="nav-avatar">?</div>
+    <span id="nav-nome">—</span>
+    <button class="btn-sair" onclick="sair()">Sair</button>
+  </div>
+</nav>
+
+<div class="content">
+
+  <!-- PAINEL PRINCIPAL -->
+  <div class="section active" id="sec-painel">
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-avatar" id="hero-avatar">?</div>
+      <div class="hero-info">
+        <div class="hero-nome" id="hero-nome">Carregando...</div>
+        <div class="hero-cargo" id="hero-cargo"></div>
+        <div class="hero-frase" id="hero-frase">✨ Carregando sua mensagem personalizada...</div>
+      </div>
+      <div class="hero-pos">
+        <div class="hero-pos-num" id="hero-pos">—</div>
+        <div class="hero-pos-label">no ranking</div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">📋</div>
+        <div class="stat-val" id="s-total">—</div>
+        <div class="stat-label">Avaliações</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-val" id="s-media">—</div>
+        <div class="stat-label">Média Geral</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">😊</div>
+        <div class="stat-val" id="s-positivos" style="color:var(--success)">—</div>
+        <div class="stat-label">Positivos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📈</div>
+        <div class="stat-val" id="s-tend">—</div>
+        <div class="stat-label">Tendência</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- Gráfico de evolução -->
+      <div class="panel">
+        <div class="panel-title">📈 Evolução da Nota</div>
+        <canvas id="chart-evolucao" height="120"></canvas>
+      </div>
+
+      <!-- Categorias -->
+      <div class="panel">
+        <div class="panel-title">📊 Desempenho por Categoria</div>
+        <div class="cat-bars">
+          <div class="cat-row">
+            <div class="cat-label">😊 Cordialidade</div>
+            <div class="cat-bar-bg"><div class="cat-bar" id="bar-cord" style="width:0%;background:#6c63ff"></div></div>
+            <div class="cat-val" id="v-cord">—</div>
+          </div>
+          <div class="cat-row">
+            <div class="cat-label">⚡ Agilidade</div>
+            <div class="cat-bar-bg"><div class="cat-bar" id="bar-agil" style="width:0%;background:#00d4aa"></div></div>
+            <div class="cat-val" id="v-agil">—</div>
+          </div>
+          <div class="cat-row">
+            <div class="cat-label">✅ Resolução</div>
+            <div class="cat-bar-bg"><div class="cat-bar" id="bar-res" style="width:0%;background:#f5a623"></div></div>
+            <div class="cat-val" id="v-res">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tags -->
+    <div class="panel">
+      <div class="panel-title">🏷️ O que os clientes mais falam sobre você</div>
+      <div class="tags-cloud" id="tags-cloud"></div>
+    </div>
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div class="section" id="sec-historico">
+    <div class="panel-title" style="margin-bottom:16px">Últimas Avaliações Recebidas</div>
+    <div id="historico-lista"></div>
+  </div>
+
+  <!-- RANKING -->
+  <div class="section" id="sec-ranking">
+    <div class="panel">
+      <div class="panel-title">🏆 Ranking da Equipe</div>
+      <div id="ranking-lista"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const token = localStorage.getItem('pd_token');
+const nome = localStorage.getItem('pd_nome');
+if (!token || localStorage.getItem('pd_tipo') !== 'funcionario') {
+  location.href = 'login.html';
+}
+
+document.getElementById('nav-nome').textContent = nome;
+document.getElementById('nav-avatar').textContent = (nome||'?').charAt(0).toUpperCase();
+
+const api = (url) => fetch(url, {
+  headers: { 'Authorization': `Bearer ${token}` }
+}).then(r => r.json());
+
+function navTo(sec, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`sec-${sec}`).classList.add('active');
+  el.classList.add('active');
+  if (sec === 'historico') renderHistorico();
+  if (sec === 'ranking') carregarRanking();
+}
+
+let dadosGlobais = null;
+let chartEvolucao = null;
+
+async function carregarPainel() {
+  const d = await api('/api/funcionario/meu-painel');
+  dadosGlobais = d;
+
+  // Hero
+  document.getElementById('hero-avatar').textContent = d.funcionario.nome.charAt(0);
+  document.getElementById('hero-nome').textContent = d.funcionario.nome;
+  document.getElementById('hero-cargo').textContent = `${d.funcionario.cargo} · ${d.funcionario.setor}`;
+  document.getElementById('hero-frase').textContent = `✨ "${d.fraseMotivacional}"`;
+  document.getElementById('hero-pos').textContent = `#${d.minhaPosicao}`;
+  document.getElementById('nav-avatar').textContent = d.funcionario.nome.charAt(0);
+
+  // Stats
+  document.getElementById('s-total').textContent = d.stats.total || 0;
+  document.getElementById('s-media').textContent = d.stats.media_geral ? d.stats.media_geral.toFixed(1) + ' ⭐' : '—';
+  document.getElementById('s-positivos').textContent = d.stats.positivos || 0;
+  const tend = d.tendencia;
+  const tendEl = document.getElementById('s-tend');
+  tendEl.textContent = tend === 'subindo' ? '↑ Subindo' : tend === 'caindo' ? '↓ Caindo' : '→ Estável';
+  tendEl.style.color = tend === 'subindo' ? 'var(--success)' : tend === 'caindo' ? 'var(--accent2)' : 'var(--accent)';
+
+  // Barras de categoria
+  const mc = d.stats.media_cordialidade || 0;
+  const ma = d.stats.media_agilidade || 0;
+  const mr = d.stats.media_resolucao || 0;
+  setTimeout(() => {
+    document.getElementById('bar-cord').style.width = `${(mc/5)*100}%`;
+    document.getElementById('bar-agil').style.width = `${(ma/5)*100}%`;
+    document.getElementById('bar-res').style.width = `${(mr/5)*100}%`;
+  }, 200);
+  document.getElementById('v-cord').textContent = mc ? mc.toFixed(1) : '—';
+  document.getElementById('v-agil').textContent = ma ? ma.toFixed(1) : '—';
+  document.getElementById('v-res').textContent = mr ? mr.toFixed(1) : '—';
+
+  // Gráfico evolução
+  const labels = d.evolucao.map(e => e.dia.slice(5));
+  const medias = d.evolucao.map(e => e.media);
+  if (chartEvolucao) chartEvolucao.destroy();
+  chartEvolucao = new Chart(document.getElementById('chart-evolucao'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Nota média',
+        data: medias,
+        borderColor: '#6c63ff',
+        backgroundColor: 'rgba(108,99,255,0.1)',
+        tension: 0.4, fill: true, pointRadius: 4,
+        pointBackgroundColor: '#6c63ff'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: '#1e1e2e' }, ticks: { color: '#666680' } },
+        y: { min: 0, max: 5, grid: { color: '#1e1e2e' }, ticks: { color: '#666680' } }
+      }
+    }
+  });
+
+  // Tags
+  const tc = document.getElementById('tags-cloud');
+  if (d.topTags.length === 0) {
+    tc.innerHTML = '<span style="color:var(--muted);font-size:13px">Nenhuma tag ainda — aguarde mais avaliações</span>';
+  } else {
+    tc.innerHTML = d.topTags.map(t => `
+      <div class="tag-item">${t.tag} <span class="tag-count">${t.count}</span></div>
+    `).join('');
+  }
+}
+
+function renderHistorico() {
+  if (!dadosGlobais) return;
+  const lista = dadosGlobais.ultimasAvaliacoes;
+  const container = document.getElementById('historico-lista');
+  if (lista.length === 0) {
+    container.innerHTML = '<div class="empty">Nenhuma avaliação ainda</div>';
+    return;
+  }
+  container.innerHTML = lista.map(a => {
+    const tags = (() => { try { return JSON.parse(a.tags_ia); } catch { return []; } })();
+    const badgeCls = a.sentimento === 'positivo' ? 'badge-pos' : a.sentimento === 'negativo' ? 'badge-neg' : 'badge-neu';
+    const emoji = a.sentimento === 'positivo' ? '😊' : a.sentimento === 'negativo' ? '😔' : '😐';
+    return `
+      <div class="avaliacao-item">
+        <div class="aval-header">
+          <div class="aval-nota">${a.nota_geral} ⭐</div>
+          <div class="aval-data">${new Date(a.criado_em).toLocaleString('pt-BR')}</div>
+        </div>
+        <div class="aval-badges">
+          <span class="badge ${badgeCls}">${emoji} ${a.sentimento}</span>
+          <span style="font-size:11px;color:var(--muted);padding:3px 8px">😊 ${a.nota_cordialidade} · ⚡ ${a.nota_agilidade} · ✅ ${a.nota_resolucao}</span>
+        </div>
+        ${a.comentario ? `<div class="aval-comentario">"${a.comentario}"</div>` : ''}
+        ${a.resumo_ia ? `<div class="aval-resumo-ia">🤖 IA: ${a.resumo_ia}</div>` : ''}
+        ${tags.length ? `<div class="aval-tags">${tags.map(t => `<span class="aval-tag">${t}</span>`).join('')}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+async function carregarRanking() {
+  const lista = await api('/api/funcionario/ranking');
+  const meuNome = dadosGlobais?.funcionario?.nome || '';
+  document.getElementById('ranking-lista').innerHTML = lista.map((f, i) => {
+    const eu = f.nome === meuNome;
+    return `
+      <div class="ranking-item">
+        <div class="rank-pos ${i<3?'rank-'+(i+1):'rank-n'} ${eu?'rank-eu':''}">${i+1}</div>
+        <div class="rank-avatar ${eu?'eu':''}">${f.nome.charAt(0)}</div>
+        <div style="flex:1">
+          <div class="${eu?'rank-nome-eu':''}" style="font-weight:600;font-size:14px">
+            ${f.nome} ${eu?'(você)':''}
+          </div>
+          <div style="color:var(--muted);font-size:12px">${f.setor} · ${f.total_avaliacoes} avaliações</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:${eu?'var(--accent)':'var(--text)'}">${f.media || '—'}</div>
+          <div style="font-size:10px;color:var(--warn)">★★★★★</div>
+        </div>
+      </div>`;
+  }).join('') || '<div class="empty">Sem dados de ranking ainda</div>';
+}
+
+function sair() { localStorage.clear(); location.href = 'login.html'; }
+
+carregarPainel();
+</script>
+</body>
+</html>

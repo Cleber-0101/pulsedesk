@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PulseDesk — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #16161f;
+    --border: #1e1e2e;
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --success: #00d4aa;
+    --warn: #f5a623;
+    --text: #e8e8f0;
+    --muted: #666680;
+    --sidebar-w: 240px;
+  }
+
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; overflow-x: hidden; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: var(--sidebar-w); min-height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    position: fixed; top: 0; left: 0; z-index: 100;
+  }
+  .sidebar-logo {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-txt { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; }
+  .logo-txt span { color: var(--accent); }
+  .logo-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .nav { padding: 16px 12px; flex: 1; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px; border-radius: 10px;
+    cursor: pointer; color: var(--muted); font-size: 14px; font-weight: 500;
+    transition: all 0.18s; margin-bottom: 4px;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(108,99,255,0.15); color: var(--accent); }
+  .nav-item .icon { font-size: 18px; width: 22px; text-align: center; }
+  .nav-badge {
+    margin-left: auto; background: var(--accent2);
+    color: #fff; font-size: 11px; font-weight: 700;
+    padding: 2px 7px; border-radius: 10px; min-width: 20px; text-align: center;
+  }
+
+  .sidebar-bottom {
+    padding: 16px 12px;
+    border-top: 1px solid var(--border);
+  }
+  .user-info { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .user-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; font-family: 'Syne', sans-serif; color: #fff;
+  }
+  .user-nome { font-size: 13px; font-weight: 500; }
+  .user-cargo { font-size: 11px; color: var(--muted); }
+  .btn-sair {
+    width: 100%; padding: 9px; border: 1px solid var(--border);
+    border-radius: 8px; background: transparent; color: var(--muted);
+    font-size: 13px; cursor: pointer; transition: all 0.18s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .btn-sair:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  /* MAIN */
+  .main { margin-left: var(--sidebar-w); flex: 1; padding: 32px; }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 32px;
+  }
+  .page-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; }
+  .page-sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+  .live-badge {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(0,212,170,0.1);
+    border: 1px solid rgba(0,212,170,0.2);
+    border-radius: 20px; padding: 6px 14px;
+    font-size: 13px; color: var(--success);
+  }
+  .live-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--success);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* SECTIONS */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* STAT CARDS */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 20px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .stat-icon { font-size: 24px; margin-bottom: 10px; }
+  .stat-val { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; }
+  .stat-label { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .stat-delta { font-size: 12px; margin-top: 8px; }
+  .delta-up { color: var(--success); }
+  .delta-down { color: var(--accent2); }
+
+  /* GRID 2 col */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+  .panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 22px;
+  }
+  .panel-title {
+    font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
+    margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .panel-action { font-size: 12px; color: var(--accent); cursor: pointer; font-family: 'DM Sans'; font-weight: 500; }
+
+  /* RANKING TABLE */
+  .ranking-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .ranking-item:last-child { border-bottom: none; }
+  .rank-pos {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 800;
+    flex-shrink: 0;
+  }
+  .rank-1 { background: rgba(255,215,0,0.15); color: #ffd700; }
+  .rank-2 { background: rgba(192,192,192,0.15); color: #c0c0c0; }
+  .rank-3 { background: rgba(205,127,50,0.15); color: #cd7f32; }
+  .rank-n { background: var(--surface2); color: var(--muted); }
+  .rank-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; color: #fff; flex-shrink: 0;
+  }
+  .rank-info { flex: 1; }
+  .rank-nome { font-weight: 600; font-size: 14px; }
+  .rank-setor { color: var(--muted); font-size: 12px; }
+  .rank-score {
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px;
+  }
+  .rank-stars { color: var(--warn); font-size: 11px; }
+
+  /* SENTIMENTO BADGES */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+  }
+  .badge-pos { background: rgba(0,212,170,0.12); color: var(--success); }
+  .badge-neu { background: rgba(108,99,255,0.12); color: var(--accent); }
+  .badge-neg { background: rgba(255,101,132,0.12); color: var(--accent2); }
+
+  /* TAGS */
+  .tags-cloud { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag-item {
+    padding: 5px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 500;
+    background: var(--surface2); border: 1px solid var(--border);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tag-count { color: var(--accent); font-weight: 700; }
+
+  /* ALERTAS */
+  .alerta-item {
+    display: flex; gap: 12px; padding: 14px;
+    background: rgba(255,101,132,0.06);
+    border: 1px solid rgba(255,101,132,0.15);
+    border-radius: 12px; margin-bottom: 8px;
+    position: relative;
+  }
+  .alerta-icon { font-size: 20px; flex-shrink: 0; }
+  .alerta-info { flex: 1; }
+  .alerta-nome { font-weight: 600; font-size: 14px; }
+  .alerta-msg { color: var(--muted); font-size: 12px; margin-top: 3px; }
+  .alerta-time { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .alerta-fechar {
+    position: absolute; top: 10px; right: 10px;
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; font-size: 16px; padding: 2px;
+  }
+
+  /* TABELA PESQUISAS */
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left; font-size: 12px; color: var(--muted); font-weight: 500;
+    padding: 8px 12px; border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td { padding: 12px; border-bottom: 1px solid rgba(30,30,46,0.5); font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  /* RESUMO IA */
+  .resumo-ia-box {
+    background: linear-gradient(135deg, rgba(108,99,255,0.08), rgba(139,92,246,0.05));
+    border: 1px solid rgba(108,99,255,0.2);
+    border-radius: 14px; padding: 20px;
+    line-height: 1.7; font-size: 14px; color: var(--text);
+    white-space: pre-line;
+  }
+
+  /* FUNCIONÁRIOS LIST */
+  .func-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px; border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.15s; border-radius: 10px;
+  }
+  .func-row:hover { background: var(--surface2); }
+  .func-row:last-child { border-bottom: none; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 32px; width: 540px; max-height: 85vh;
+    overflow-y: auto; transform: scale(0.95); transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: scale(1); }
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+  .modal-sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+  .modal-close { float: right; background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; margin-top: -4px; }
+
+  .field { margin-bottom: 16px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  input, select {
+    width: 100%; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  select option { background: var(--surface); }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    color: #fff; border: none; border-radius: 10px;
+    padding: 12px 24px; font-family: 'Syne', sans-serif;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(108,99,255,0.3); }
+
+  /* QR Modal */
+  .qr-img { display: block; margin: 0 auto 16px; border-radius: 12px; max-width: 220px; }
+  .qr-url {
+    text-align: center; font-size: 12px; color: var(--muted);
+    word-break: break-all; padding: 10px;
+    background: var(--bg); border-radius: 8px;
+  }
+
+  /* Donut */
+  .donut-wrap { position: relative; width: 160px; height: 160px; margin: 0 auto; }
+  .donut-center {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    text-align: center;
+  }
+  .donut-val { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; }
+  .donut-label { font-size: 11px; color: var(--muted); }
+
+  /* Sentimento meter */
+  .sent-legend { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+  .sent-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .sent-bar-bg { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .sent-bar { height: 100%; border-radius: 3px; transition: width 1s ease; }
+  .sent-count { width: 30px; text-align: right; color: var(--muted); font-size: 12px; }
+
+  /* Notif toast */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 999;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 18px;
+    max-width: 320px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    transform: translateX(120%); transition: transform 0.3s;
+  }
+  .toast.show { transform: translateX(0); }
+  .toast-title { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+  .toast-body { font-size: 13px; color: var(--muted); }
+
+  .empty { text-align: center; color: var(--muted); padding: 32px; font-size: 14px; }
+
+  /* Scroll */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-txt">Pulse<span>Desk</span></div>
+    <div class="logo-sub">Painel Administrativo</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="navTo('dashboard', this)">
+      <span class="icon">📊</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="navTo('funcionarios', this)">
+      <span class="icon">👥</span> Funcionários
+    </div>
+    <div class="nav-item" onclick="navTo('pesquisas', this)">
+      <span class="icon">📋</span> Pesquisas
+    </div>
+    <div class="nav-item" onclick="navTo('alertas', this)">
+      <span class="icon">🔔</span> Alertas
+      <span class="nav-badge" id="badge-alertas" style="display:none">0</span>
+    </div>
+    <div class="nav-item" onclick="navTo('ia', this)">
+      <span class="icon">✨</span> Insights IA
+    </div>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="user-info">
+      <div class="user-avatar" id="user-avatar">A</div>
+      <div>
+        <div class="user-nome" id="user-nome">Admin</div>
+        <div class="user-cargo">Administrador</div>
+      </div>
+    </div>
+    <button class="btn-sair" onclick="sair()">↩ Sair</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <div class="page-title" id="page-title">Dashboard</div>
+      <div class="page-sub" id="page-sub">Visão geral em tempo real</div>
+    </div>
+    <div class="live-badge"><div class="live-dot"></div> Ao vivo</div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="section active" id="sec-dashboard">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">📋</div>
+        <div class="stat-val" id="s-total">—</div>
+        <div class="stat-label">Total de Avaliações</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📅</div>
+        <div class="stat-val" id="s-hoje">—</div>
+        <div class="stat-label">Avaliações Hoje</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-val" id="s-media">—</div>
+        <div class="stat-label">Média Geral</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🔔</div>
+        <div class="stat-val" id="s-alertas" style="color:var(--accent2)">—</div>
+        <div class="stat-label">Alertas Pendentes</div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="panel">
+        <div class="panel-title">Avaliações — Últimos 7 dias</div>
+        <canvas id="chart-linha" height="80"></canvas>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Sentimentos</div>
+        <div class="donut-wrap">
+          <canvas id="chart-donut"></canvas>
+          <div class="donut-center">
+            <div class="donut-val" id="donut-pct">—</div>
+            <div class="donut-label">positivos</div>
+          </div>
+        </div>
+        <div class="sent-legend" id="sent-legend"></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title">🏆 Ranking de Atendentes</div>
+        <div id="ranking-list"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">🏷️ Tags Mais Frequentes</div>
+        <div class="tags-cloud" id="tags-cloud"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FUNCIONÁRIOS -->
+  <div class="section" id="sec-funcionarios">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+      <button class="btn-primary" onclick="abrirModalNovoFunc()">+ Novo Funcionário</button>
+    </div>
+    <div class="panel">
+      <div id="func-lista"></div>
+    </div>
+  </div>
+
+  <!-- PESQUISAS -->
+  <div class="section" id="sec-pesquisas">
+    <div class="panel" style="margin-bottom:16px">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+        <div class="field" style="margin:0;flex:1;min-width:160px">
+          <label>Sentimento</label>
+          <select id="filtro-sent" onchange="carregarPesquisas()">
+            <option value="">Todos</option>
+            <option value="positivo">Positivo</option>
+            <option value="neutro">Neutro</option>
+            <option value="negativo">Negativo</option>
+          </select>
+        </div>
+        <div class="field" style="margin:0;flex:1;min-width:140px">
+          <label>De</label>
+          <input type="date" id="filtro-de" onchange="carregarPesquisas()" />
+        </div>
+        <div class="field" style="margin:0;flex:1;min-width:140px">
+          <label>Até</label>
+          <input type="date" id="filtro-ate" onchange="carregarPesquisas()" />
+        </div>
+      </div>
+    </div>
+    <div class="panel" style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Funcionário</th><th>Nota</th><th>Cordialidade</th>
+            <th>Agilidade</th><th>Resolução</th><th>Sentimento</th>
+            <th>Comentário</th><th>Data</th>
+          </tr>
+        </thead>
+        <tbody id="pesquisas-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ALERTAS -->
+  <div class="section" id="sec-alertas">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+      <button class="btn-primary" onclick="marcarTodosLidos()">✓ Marcar todos como lidos</button>
+    </div>
+    <div id="alertas-lista"></div>
+  </div>
+
+  <!-- INSIGHTS IA -->
+  <div class="section" id="sec-ia">
+    <div class="panel">
+      <div class="panel-title">✨ Resumo Executivo da Semana — Gerado por IA</div>
+      <div id="resumo-ia-conteudo">
+        <div class="empty">Clique em "Gerar Resumo" para obter a análise da semana</div>
+      </div>
+      <br>
+      <button class="btn-primary" onclick="gerarResumo()">✨ Gerar Resumo com IA</button>
+    </div>
+  </div>
+
+</main>
+
+<!-- MODAL NOVO FUNCIONÁRIO -->
+<div class="modal-overlay" id="modal-func">
+  <div class="modal">
+    <button class="modal-close" onclick="fecharModal('modal-func')">×</button>
+    <div class="modal-title">Novo Funcionário</div>
+    <div class="modal-sub">Preencha os dados para cadastrar</div>
+    <div class="field"><label>Nome completo</label><input type="text" id="f-nome" /></div>
+    <div class="field"><label>E-mail</label><input type="email" id="f-email" /></div>
+    <div class="field"><label>Senha inicial</label><input type="password" id="f-senha" /></div>
+    <div class="field"><label>Setor</label><input type="text" id="f-setor" placeholder="Ex: Suporte, Vendas..." /></div>
+    <div class="field"><label>Cargo</label><input type="text" id="f-cargo" placeholder="Ex: Atendente, Consultor..." /></div>
+    <button class="btn-primary" onclick="criarFuncionario()">Cadastrar Funcionário</button>
+  </div>
+</div>
+
+<!-- MODAL QR CODE -->
+<div class="modal-overlay" id="modal-qr">
+  <div class="modal" style="text-align:center">
+    <button class="modal-close" onclick="fecharModal('modal-qr')">×</button>
+    <div class="modal-title" id="qr-nome">QR Code</div>
+    <div class="modal-sub">Link personalizado da pesquisa</div>
+    <img id="qr-img" class="qr-img" src="" />
+    <div class="qr-url" id="qr-url"></div>
+    <br>
+    <button class="btn-primary" onclick="baixarQR()">⬇ Baixar QR Code</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-title" id="toast-title"></div>
+  <div class="toast-body" id="toast-body"></div>
+</div>
+
+<script>
+const token = localStorage.getItem('pd_token');
+const nome = localStorage.getItem('pd_nome');
+if (!token || localStorage.getItem('pd_tipo') !== 'admin') {
+  location.href = 'login.html';
+}
+document.getElementById('user-nome').textContent = nome || 'Admin';
+document.getElementById('user-avatar').textContent = (nome || 'A').charAt(0).toUpperCase();
+
+const api = (url, opts = {}) => fetch(url, {
+  ...opts,
+  headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', ...opts.headers }
+}).then(r => r.json());
+
+let chartLinha, chartDonut;
+
+// NAV
+function navTo(sec, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`sec-${sec}`).classList.add('active');
+  el.classList.add('active');
+  const titles = {
+    dashboard: ['Dashboard', 'Visão geral em tempo real'],
+    funcionarios: ['Funcionários', 'Gerencie a equipe e QR Codes'],
+    pesquisas: ['Pesquisas', 'Histórico de avaliações'],
+    alertas: ['Alertas', 'Feedbacks críticos'],
+    ia: ['Insights IA', 'Análises automáticas com inteligência artificial']
+  };
+  document.getElementById('page-title').textContent = titles[sec][0];
+  document.getElementById('page-sub').textContent = titles[sec][1];
+  if (sec === 'funcionarios') carregarFuncionarios();
+  if (sec === 'pesquisas') carregarPesquisas();
+  if (sec === 'alertas') carregarAlertas();
+}
+
+// DASHBOARD
+async function carregarDashboard() {
+  const d = await api('/api/admin/dashboard');
+
+  document.getElementById('s-total').textContent = d.totalPesquisas;
+  document.getElementById('s-hoje').textContent = d.pesquisasHoje;
+  document.getElementById('s-media').textContent = d.mediaGeral ? d.mediaGeral.toFixed(1) + ' ⭐' : '—';
+  document.getElementById('s-alertas').textContent = d.alertasNaoLidos;
+
+  if (d.alertasNaoLidos > 0) {
+    document.getElementById('badge-alertas').textContent = d.alertasNaoLidos;
+    document.getElementById('badge-alertas').style.display = 'block';
+  }
+
+  // Chart linha
+  const dias = d.pesquisasPorDia.map(p => p.dia.slice(5));
+  const totais = d.pesquisasPorDia.map(p => p.total);
+
+  if (chartLinha) chartLinha.destroy();
+  chartLinha = new Chart(document.getElementById('chart-linha'), {
+    type: 'line',
+    data: {
+      labels: dias,
+      datasets: [{
+        label: 'Avaliações',
+        data: totais,
+        borderColor: '#6c63ff',
+        backgroundColor: 'rgba(108,99,255,0.1)',
+        tension: 0.4, fill: true, pointRadius: 4,
+        pointBackgroundColor: '#6c63ff'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: '#1e1e2e' }, ticks: { color: '#666680' } },
+        y: { grid: { color: '#1e1e2e' }, ticks: { color: '#666680', stepSize: 1 } }
+      }
+    }
+  });
+
+  // Donut sentimentos
+  const sentMap = { positivo: 0, neutro: 0, negativo: 0 };
+  d.sentimentos.forEach(s => sentMap[s.sentimento] = s.total);
+  const total = sentMap.positivo + sentMap.neutro + sentMap.negativo || 1;
+  const pct = Math.round((sentMap.positivo / total) * 100);
+  document.getElementById('donut-pct').textContent = pct + '%';
+
+  if (chartDonut) chartDonut.destroy();
+  chartDonut = new Chart(document.getElementById('chart-donut'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Positivo', 'Neutro', 'Negativo'],
+      datasets: [{
+        data: [sentMap.positivo, sentMap.neutro, sentMap.negativo],
+        backgroundColor: ['#00d4aa', '#6c63ff', '#ff6584'],
+        borderWidth: 0
+      }]
+    },
+    options: { cutout: '72%', plugins: { legend: { display: false } }, responsive: true }
+  });
+
+  // Sent legend
+  const legend = document.getElementById('sent-legend');
+  legend.innerHTML = [
+    { label: '😊 Positivo', val: sentMap.positivo, cor: '#00d4aa' },
+    { label: '😐 Neutro', val: sentMap.neutro, cor: '#6c63ff' },
+    { label: '😔 Negativo', val: sentMap.negativo, cor: '#ff6584' }
+  ].map(s => `
+    <div class="sent-row">
+      <span style="font-size:12px;min-width:72px">${s.label}</span>
+      <div class="sent-bar-bg"><div class="sent-bar" style="width:${(s.val/total*100).toFixed(0)}%;background:${s.cor}"></div></div>
+      <span class="sent-count">${s.val}</span>
+    </div>`).join('');
+
+  // Ranking
+  const rl = document.getElementById('ranking-list');
+  rl.innerHTML = d.topFuncionarios.slice(0, 6).map((f, i) => `
+    <div class="ranking-item">
+      <div class="rank-pos ${i<3?'rank-'+(i+1):'rank-n'}">${i+1}</div>
+      <div class="rank-avatar">${f.nome.charAt(0)}</div>
+      <div class="rank-info">
+        <div class="rank-nome">${f.nome}</div>
+        <div class="rank-setor">${f.setor} · ${f.total_avaliacoes} avaliações</div>
+      </div>
+      <div>
+        <div class="rank-score">${f.media || '—'}</div>
+        <div class="rank-stars">★★★★★</div>
+      </div>
+    </div>`).join('') || '<div class="empty">Nenhuma avaliação ainda</div>';
+
+  // Tags
+  const tc = document.getElementById('tags-cloud');
+  tc.innerHTML = d.topTags.map(t => `
+    <div class="tag-item">${t.tag} <span class="tag-count">${t.count}</span></div>
+  `).join('') || '<div style="color:var(--muted);font-size:13px">Nenhuma tag ainda</div>';
+}
+
+// FUNCIONÁRIOS
+async function carregarFuncionarios() {
+  const lista = await api('/api/admin/funcionarios');
+  document.getElementById('func-lista').innerHTML = lista.map(f => `
+    <div class="func-row">
+      <div class="rank-avatar" style="width:40px;height:40px">${f.nome.charAt(0)}</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:14px">${f.nome}</div>
+        <div style="color:var(--muted);font-size:12px">${f.cargo} · ${f.setor}</div>
+      </div>
+      <div style="text-align:center;min-width:70px">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px">${f.media_geral || '—'}</div>
+        <div style="font-size:11px;color:var(--muted)">${f.total_avaliacoes || 0} avals.</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-left:12px">
+        <button class="btn-primary" style="padding:8px 14px;font-size:12px" onclick="verQR(${f.id}, '${f.nome}')">QR Code</button>
+        <button class="btn-primary" style="padding:8px 14px;font-size:12px;background:var(--surface2);color:var(--text)" onclick="toggleAtivo(${f.id}, ${f.ativo}, '${f.nome}', '${f.setor}', '${f.cargo}')">
+          ${f.ativo ? 'Ativo' : 'Inativo'}
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+// PESQUISAS
+async function carregarPesquisas() {
+  const sent = document.getElementById('filtro-sent').value;
+  const de = document.getElementById('filtro-de').value;
+  const ate = document.getElementById('filtro-ate').value;
+  const params = new URLSearchParams({ limite: 100 });
+  if (sent) params.append('sentimento', sent);
+  if (de) params.append('de', de);
+  if (ate) params.append('ate', ate);
+
+  const lista = await api(`/api/admin/pesquisas?${params}`);
+  const tbody = document.getElementById('pesquisas-tbody');
+  tbody.innerHTML = lista.map(p => `
+    <tr>
+      <td><strong>${p.funcionario_nome}</strong><br><span style="color:var(--muted);font-size:11px">${p.setor}</span></td>
+      <td><strong style="font-family:'Syne',sans-serif">${p.nota_geral}</strong></td>
+      <td>${p.nota_cordialidade}⭐</td>
+      <td>${p.nota_agilidade}⭐</td>
+      <td>${p.nota_resolucao}⭐</td>
+      <td><span class="badge badge-${p.sentimento==='positivo'?'pos':p.sentimento==='negativo'?'neg':'neu'}">
+        ${p.sentimento==='positivo'?'😊':p.sentimento==='negativo'?'😔':'😐'} ${p.sentimento}
+      </span></td>
+      <td style="max-width:200px;color:var(--muted)">${p.comentario ? p.comentario.substring(0,80)+'...' : '—'}</td>
+      <td style="color:var(--muted);white-space:nowrap;font-size:12px">${new Date(p.criado_em).toLocaleString('pt-BR')}</td>
+    </tr>`).join('') || `<tr><td colspan="8" class="empty">Nenhuma pesquisa encontrada</td></tr>`;
+}
+
+// ALERTAS
+async function carregarAlertas() {
+  const d = await api('/api/admin/dashboard');
+  const lista = d.alertasRecentes;
+  document.getElementById('alertas-lista').innerHTML = lista.map(a => `
+    <div class="alerta-item" id="alerta-${a.id}">
+      <div class="alerta-icon">⚠️</div>
+      <div class="alerta-info">
+        <div class="alerta-nome">${a.funcionario_nome} — Nota ${a.nota_geral}</div>
+        <div class="alerta-msg">${a.mensagem}</div>
+        ${a.comentario ? `<div style="font-size:12px;color:var(--text);margin-top:6px;background:var(--bg);padding:8px;border-radius:8px">"${a.comentario}"</div>` : ''}
+        <div class="alerta-time">${new Date(a.criado_em).toLocaleString('pt-BR')}</div>
+      </div>
+      <button class="alerta-fechar" onclick="lerAlerta(${a.id})">✓</button>
+    </div>`).join('') || '<div class="empty">✅ Nenhum alerta pendente!</div>';
+}
+
+async function lerAlerta(id) {
+  await api(`/api/admin/alertas/${id}/lido`, { method: 'PUT' });
+  document.getElementById(`alerta-${id}`).remove();
+}
+
+async function marcarTodosLidos() {
+  await api('/api/admin/alertas/todos/lido', { method: 'PUT' });
+  document.getElementById('badge-alertas').style.display = 'none';
+  carregarAlertas();
+}
+
+// QR CODE
+async function verQR(id, nome) {
+  const d = await api(`/api/admin/funcionarios/${id}/qrcode`);
+  document.getElementById('qr-nome').textContent = `QR Code — ${nome}`;
+  document.getElementById('qr-img').src = d.qr;
+  document.getElementById('qr-url').textContent = d.url;
+  abrirModal('modal-qr');
+}
+
+function baixarQR() {
+  const img = document.getElementById('qr-img').src;
+  const a = document.createElement('a');
+  a.href = img;
+  a.download = 'qrcode-pesquisa.png';
+  a.click();
+}
+
+// FUNCIONÁRIO
+function abrirModalNovoFunc() { abrirModal('modal-func'); }
+async function criarFuncionario() {
+  const body = {
+    nome: document.getElementById('f-nome').value,
+    email: document.getElementById('f-email').value,
+    senha: document.getElementById('f-senha').value,
+    setor: document.getElementById('f-setor').value,
+    cargo: document.getElementById('f-cargo').value,
+  };
+  const r = await api('/api/admin/funcionarios', { method: 'POST', body: JSON.stringify(body) });
+  if (r.sucesso) {
+    fecharModal('modal-func');
+    carregarFuncionarios();
+    toast('✅ Funcionário cadastrado!', 'Agora você pode gerar o QR Code dele.');
+  } else {
+    alert(r.erro);
+  }
+}
+
+async function toggleAtivo(id, ativo, nome, setor, cargo) {
+  await api(`/api/admin/funcionarios/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ nome, setor, cargo, ativo: ativo ? 0 : 1 })
+  });
+  carregarFuncionarios();
+}
+
+// IA RESUMO
+async function gerarResumo() {
+  document.getElementById('resumo-ia-conteudo').innerHTML = '<div class="empty">⏳ A IA está analisando os dados da semana...</div>';
+  const d = await api('/api/admin/resumo-semanal');
+  document.getElementById('resumo-ia-conteudo').innerHTML = `<div class="resumo-ia-box">${d.resumo}</div>`;
+}
+
+// MODAIS
+function abrirModal(id) { document.getElementById(id).classList.add('open'); }
+function fecharModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// TOAST
+function toast(titulo, body) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-title').textContent = titulo;
+  document.getElementById('toast-body').textContent = body;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// SOCKET.IO — Alertas em tempo real
+const socket = io();
+socket.on('nova_pesquisa', (data) => {
+  const emoji = data.sentimento === 'positivo' ? '😊' : data.sentimento === 'negativo' ? '🚨' : '📋';
+  toast(`${emoji} Nova avaliação recebida`, `${data.funcionario} · Nota ${parseFloat(data.nota).toFixed(1)}`);
+  setTimeout(carregarDashboard, 1000);
+});
+
+function sair() {
+  localStorage.clear();
+  location.href = 'login.html';
+}
+
+// Init
+carregarDashboard();
+</script>
+</body>
+</html>

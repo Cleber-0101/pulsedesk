@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PulseDesk — Avalie seu Atendimento</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #09090d;
+    --surface: #141418;
+    --surface2: #1e1f27;
+    --border: #2f2f39;
+    --accent: #d8c29d;
+    --accent2: #b8a47a;
+    --success: #7ce3b8;
+    --text: #f4efe5;
+    --muted: #a49d8d;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: linear-gradient(180deg, #09090d 0%, #0f0f14 45%, #0b0b0f 100%);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .header {
+    text-align: center; margin-bottom: 30px;
+    animation: fadeIn 0.5s ease;
+  }
+  .logo { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--accent); margin-bottom: 8px; }
+  .logo span { color: #f4efe5; }
+
+  .card {
+    background: rgba(20, 20, 27, 0.94);
+    border-radius: 32px;
+    padding: 40px;
+    width: 100%; max-width: 560px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+    border: 1px solid rgba(255,255,255,0.04);
+    animation: slideUp 0.5s ease;
+  }
+
+  @keyframes slideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .funcionario-card {
+    display: flex; align-items: center; gap: 16px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 20px;
+    padding: 18px 22px;
+    margin-bottom: 28px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .avatar {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 800; color: #111;
+    font-family: 'Syne', sans-serif;
+    flex-shrink: 0;
+  }
+  .func-info { flex: 1; }
+  .func-nome { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 17px; }
+  .func-setor { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+  h2 { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+
+  .categoria { margin-bottom: 24px; }
+  .cat-label {
+    font-size: 14px; font-weight: 500;
+    display: flex; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .cat-label .emoji { margin-right: 6px; }
+  .cat-label .nota-val { color: var(--accent); font-weight: 700; }
+
+  .stars { display: flex; gap: 10px; }
+  .star {
+    width: 46px; height: 46px;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.18s;
+    background: rgba(255,255,255,0.02);
+    user-select: none;
+  }
+  .star:hover { border-color: var(--accent); transform: scale(1.08); }
+  .star.ativo { background: var(--accent); border-color: var(--accent); transform: scale(1.05); color: #111; }
+
+  .divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+  .field { margin-bottom: 18px; }
+  label { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 8px; }
+  input, textarea, select {
+    width: 100%;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none; resize: none;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(216,194,157,0.12); }
+  textarea { min-height: 100px; }
+
+  .func-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-top: 8px;
+  }
+  .func-option {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.18s;
+    text-align: center;
+    background: rgba(255,255,255,0.03);
+  }
+  .func-option:hover { border-color: var(--accent); background: rgba(216,194,157,0.08); }
+  .func-option.selecionado { border-color: var(--accent); background: rgba(216,194,157,0.16); }
+  .func-option .fn { font-weight: 600; font-size: 14px; }
+  .func-option .fs { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .btn {
+    width: 100%;
+    padding: 17px;
+    border: none; border-radius: 16px;
+    font-family: 'Syne', sans-serif;
+    font-size: 17px; font-weight: 700;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #111;
+    transition: all 0.2s;
+    margin-top: 8px;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(216,194,157,0.28); }
+  .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+  .sucesso {
+    text-align: center; padding: 20px;
+    display: none;
+  }
+  .sucesso-icon {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    margin: 0 auto 20px;
+    animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: rgba(216,194,157,0.24);
+    color: #111;
+  }
+  @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+  .sucesso h2 { font-family: 'Syne', sans-serif; font-size: 24px; margin-bottom: 10px; }
+  .sucesso p { color: var(--muted); font-size: 15px; line-height: 1.7; }
+  .sentimento-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 600; font-size: 14px;
+    margin-top: 16px;
+  }
+
+  .loading { display: none; text-align: center; padding: 20px; color: var(--muted); }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Pulse<span>Desk</span></div>
+  <p style="color:var(--muted); font-size:13px">Sua opinião faz a diferença</p>
+</div>
+
+<div class="card">
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    Carregando...
+  </div>
+
+  <!-- Formulário -->
+  <div id="form-area">
+    <div id="func-info-area"></div>
+
+    <h2>Como foi seu atendimento?</h2>
+    <p class="subtitle">Avalie cada aspecto — leva menos de 1 minuto ⚡</p>
+
+    <!-- Categorias de avaliação -->
+    <div class="categoria">
+      <div class="cat-label">
+        <span><span class="emoji">😊</span> Cordialidade</span>
+        <span class="nota-val" id="v-cord">—</span>
+      </div>
+      <div class="stars" id="stars-cord">
+        <div class="star" onclick="setNota('cord',1)">⭐</div>
+        <div class="star" onclick="setNota('cord',2)">⭐</div>
+        <div class="star" onclick="setNota('cord',3)">⭐</div>
+        <div class="star" onclick="setNota('cord',4)">⭐</div>
+        <div class="star" onclick="setNota('cord',5)">⭐</div>
+      </div>
+    </div>
+
+    <div class="categoria">
+      <div class="cat-label">
+        <span><span class="emoji">⚡</span> Agilidade</span>
+        <span class="nota-val" id="v-agil">—</span>
+      </div>
+      <div class="stars" id="stars-agil">
+        <div class="star" onclick="setNota('agil',1)">⭐</div>
+        <div class="star" onclick="setNota('agil',2)">⭐</div>
+        <div class="star" onclick="setNota('agil',3)">⭐</div>
+        <div class="star" onclick="setNota('agil',4)">⭐</div>
+        <div class="star" onclick="setNota('agil',5)">⭐</div>
+      </div>
+    </div>
+
+    <div class="categoria">
+      <div class="cat-label">
+        <span><span class="emoji">✅</span> Resolução do Problema</span>
+        <span class="nota-val" id="v-res">—</span>
+      </div>
+      <div class="stars" id="stars-res">
+        <div class="star" onclick="setNota('res',1)">⭐</div>
+        <div class="star" onclick="setNota('res',2)">⭐</div>
+        <div class="star" onclick="setNota('res',3)">⭐</div>
+        <div class="star" onclick="setNota('res',4)">⭐</div>
+        <div class="star" onclick="setNota('res',5)">⭐</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Comentário -->
+    <div class="field">
+      <label>💬 Comentário (opcional)</label>
+      <textarea id="comentario" placeholder="Conte mais sobre sua experiência..."></textarea>
+    </div>
+
+    <div class="field">
+      <label>👤 Seu nome (opcional)</label>
+      <input type="text" id="nome_cliente" placeholder="Anônimo" />
+    </div>
+
+    <!-- Seletor de funcionário (modo geral, sem token) -->
+    <div class="field" id="selector-func-area" style="display:none">
+      <label>🧑‍💼 Quem te atendeu?</label>
+      <div class="func-grid" id="func-grid"></div>
+    </div>
+
+    <button class="btn" id="btnEnviar" onclick="enviar()">Enviar Avaliação →</button>
+  </div>
+
+  <!-- Sucesso -->
+  <div class="sucesso" id="sucesso">
+    <div class="sucesso-icon" id="sucesso-icon"></div>
+    <h2 id="sucesso-titulo">Obrigado!</h2>
+    <p id="sucesso-msg">Sua avaliação foi registrada com sucesso.<br>Ela ajuda a melhorar o atendimento para todos.</p>
+    <div class="sentimento-badge" id="sentimento-badge"></div>
+    <br><br>
+    <button class="btn" onclick="location.reload()" style="max-width:200px;margin:0 auto">Nova Avaliação</button>
+  </div>
+</div>
+
+<script>
+  const notas = { cord: 0, agil: 0, res: 0 };
+  let funcSelecionadoId = null;
+  let tokenFunc = null;
+
+  // Pegar token da URL
+  const params = new URLSearchParams(location.search);
+  tokenFunc = params.get('token');
+
+  window.addEventListener('DOMContentLoaded', async () => {
+    if (tokenFunc) {
+      await carregarFuncionarioPorToken(tokenFunc);
+    } else {
+      await carregarListaFuncionarios();
+    }
+  });
+
+  async function carregarFuncionarioPorToken(token) {
+    document.getElementById('loading').style.display = 'block';
+    try {
+      const res = await fetch(`/api/pesquisa/funcionario/${token}`);
+      if (!res.ok) throw new Error();
+      const f = await res.json();
+      document.getElementById('func-info-area').innerHTML = `
+        <div class="funcionario-card">
+          <div class="avatar">${f.nome.charAt(0)}</div>
+          <div class="func-info">
+            <div class="func-nome">${f.nome}</div>
+            <div class="func-setor">${f.cargo} · ${f.setor}</div>
+          </div>
+        </div>`;
+    } catch { }
+    document.getElementById('loading').style.display = 'none';
+  }
+
+  async function carregarListaFuncionarios() {
+    document.getElementById('loading').style.display = 'block';
+    try {
+      const res = await fetch('/api/pesquisa/funcionarios');
+      const lista = await res.json();
+      const grid = document.getElementById('func-grid');
+      lista.forEach(f => {
+        const div = document.createElement('div');
+        div.className = 'func-option';
+        div.innerHTML = `<div class="fn">${f.nome}</div><div class="fs">${f.setor}</div>`;
+        div.onclick = () => {
+          document.querySelectorAll('.func-option').forEach(d => d.classList.remove('selecionado'));
+          div.classList.add('selecionado');
+          funcSelecionadoId = f.id;
+        };
+        grid.appendChild(div);
+      });
+      document.getElementById('selector-func-area').style.display = 'block';
+    } catch { }
+    document.getElementById('loading').style.display = 'none';
+  }
+
+  function setNota(cat, val) {
+    notas[cat] = val;
+    const labels = { cord: 'v-cord', agil: 'v-agil', res: 'v-res' };
+    const starsId = { cord: 'stars-cord', agil: 'stars-agil', res: 'stars-res' };
+    const textos = ['', 'Ruim', 'Regular', 'Bom', 'Muito Bom', 'Excelente'];
+    document.getElementById(labels[cat]).textContent = textos[val];
+    document.querySelectorAll(`#${starsId[cat]} .star`).forEach((s, i) => {
+      s.classList.toggle('ativo', i < val);
+    });
+  }
+
+  async function enviar() {
+    if (!notas.cord || !notas.agil || !notas.res) {
+      alert('Por favor, avalie todas as categorias!');
+      return;
+    }
+    if (!tokenFunc && !funcSelecionadoId) {
+      alert('Selecione o atendente que te atendeu!');
+      return;
+    }
+
+    const btn = document.getElementById('btnEnviar');
+    btn.disabled = true;
+    btn.textContent = 'Analisando com IA... ✨';
+
+    const body = {
+      token_funcionario: tokenFunc || undefined,
+      funcionario_id: funcSelecionadoId || undefined,
+      nota_cordialidade: notas.cord,
+      nota_agilidade: notas.agil,
+      nota_resolucao: notas.res,
+      comentario: document.getElementById('comentario').value,
+      nome_cliente: document.getElementById('nome_cliente').value || 'Anônimo'
+    };
+
+    try {
+      const res = await fetch('/api/pesquisa/enviar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro);
+
+      // Mostrar sucesso
+      document.getElementById('form-area').style.display = 'none';
+      const sucesso = document.getElementById('sucesso');
+      sucesso.style.display = 'block';
+
+      const sentMap = {
+        positivo: { icon: '🎉', cor: '#00c896', bg: 'rgba(0,200,150,0.1)', texto: '✨ Feedback positivo' },
+        neutro:   { icon: '😊', cor: '#6c63ff', bg: 'rgba(108,99,255,0.1)', texto: '🙂 Feedback neutro' },
+        negativo: { icon: '😔', cor: '#ff6584', bg: 'rgba(255,101,132,0.1)', texto: '🔔 Feedback registrado' }
+      };
+      const s = sentMap[data.sentimento] || sentMap.neutro;
+      document.getElementById('sucesso-icon').textContent = s.icon;
+      document.getElementById('sucesso-icon').style.background = s.bg;
+      const badge = document.getElementById('sentimento-badge');
+      badge.textContent = s.texto;
+      badge.style.background = s.bg;
+      badge.style.color = s.cor;
+
+    } catch (err) {
+      alert('Erro ao enviar: ' + err.message);
+      btn.disabled = false;
+      btn.textContent = 'Enviar Avaliação →';
+    }
+  }
+</script>
+</body>
+</html>
