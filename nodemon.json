@@ -1,0 +1,6 @@
+{
+  "watch": ["server.js", "routes", "middleware", "services", "database.js", "public"],
+  "ext": "js,mjs,cjs,json,css,html",
+  "ignore": ["node_modules", "pulsedesk.db"],
+  "delay": 500
+}

@@ -36,18 +36,25 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-ready
-  .then(() => {
-    server.listen(PORT, () => {
-      console.log(`\n🚀 PulseDesk rodando em http://localhost:${PORT}`);
-      console.log(`📊 Admin:       http://localhost:${PORT}/admin.html`);
-      console.log(`👤 Funcionário: http://localhost:${PORT}/funcionario.html`);
-      console.log(`📝 Pesquisa:    http://localhost:${PORT}/pesquisa.html`);
-      console.log(`\n🔑 Login admin:       admin@pulsedesk.com / admin123`);
-      console.log(`🔑 Login funcionário: ana@empresa.com / senha123\n`);
+
+// Inicializar apenas em ambiente local (não Vercel)
+if (process.env.NODE_ENV !== 'production') {
+  ready
+    .then(() => {
+      server.listen(PORT, () => {
+        console.log(`\n🚀 PulseDesk rodando em http://localhost:${PORT}`);
+        console.log(`📊 Admin:       http://localhost:${PORT}/admin.html`);
+        console.log(`👤 Funcionário: http://localhost:${PORT}/funcionario.html`);
+        console.log(`📝 Pesquisa:    http://localhost:${PORT}/pesquisa.html`);
+        console.log(`\n🔑 Login admin:       admin@pulsedesk.com / admin123`);
+        console.log(`🔑 Login funcionário: ana@empresa.com / senha123\n`);
+      });
+    })
+    .catch((err) => {
+      console.error('Falha ao inicializar o banco de dados:', err);
+      process.exit(1);
     });
-  })
-  .catch((err) => {
-    console.error('Falha ao inicializar o banco de dados:', err);
-    process.exit(1);
-  });
+}
+
+// Exportar para Vercel/serverless
+module.exports = app;
